@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import Component from '../src/test-component'
+import Component from '../src/index'
 
 describe('test-component 测试', () => {
   const wrapper = mount(Component,{

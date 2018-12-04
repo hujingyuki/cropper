@@ -1,13 +1,12 @@
 <template>
   <div class="imageCropper">
     <p class="p-btn">
-      <button class="btn-upload">Select</button>
+      <button class="btn-upload">选择文件</button>
       <input type="file"
              name="avatar"
              id="file-input"
              class="file-input"
              accept="image/*">
-      Support formats: JPG, JEPG, PNG
     </p>
     <div class="preview-container">
       <div class="image-container target"
@@ -26,14 +25,36 @@
       </div>
     </div>
     <canvas id="cropper-canvas"
-            width="168"
-            height="200"></canvas>
+            :width="preview.w"
+            :height="preview.h"></canvas>
   </div>
 </template>
 
 <script>
 import Cropper from './cropper.js';
 export default {
+  props: {
+    //裁剪框的宽度
+    width: {
+      type: Number,
+      default: () => {return 168}
+    },
+    //裁剪框的高度
+    height: {
+      type: Number,
+      default: () => {return 200}
+    },
+    //预览框的大小
+    preview: {
+      type: Object,
+      default: () => {
+        return {
+          w: 42,
+          h: 50
+        }
+      }
+    }
+  },
   mounted: () => {
     let canvas = document.getElementById("cropper-canvas");
 
@@ -44,7 +65,6 @@ export default {
       element: document.getElementById("cropper-target"),
       previews: [document.getElementById("preview-large")],
       onCroppedRectChange: function(rect) {
-        console.log("rect", rect);
         ctx.drawImage(
           img,
           rect.left,
@@ -57,7 +77,6 @@ export default {
           200
         );
         let newImg = canvas.toDataURL();
-        console.log("newImg", newImg);
       }
     });
     let input = document.getElementById("file-input");

@@ -1,7 +1,7 @@
 {
   "name": "@edu/app-cropper",
   "version": "1.0.0",
-  "description": "基于canvas的图片剪裁",
+  "description": "基于canvas的图片剪裁及预览",
   "main": "dist/cropper.umd.js",
   "module": "dist/cropper.esm.js",
   "unpkg": "dist/cropper.min.js",

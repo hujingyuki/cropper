@@ -1,69 +1,90 @@
 <template>
   <div class="imageCropper">
-    <p class="p-btn">
-      <button class="btn-upload">选择文件</button>
+    <div class="btn-choose"
+         :style="btnStyle">
       <input type="file"
              name="avatar"
              id="file-input"
              class="file-input"
              accept="image/*">
-    </p>
+      选择文件
+    </div>
     <div class="preview-container">
       <div class="image-container target"
-           id="cropper-target">
-        <img src=""
+           id="cropper-target"
+           :style="{ width: width +'px', height: height + 'px'}">
+        <img :src=srcPath
              class="noavatar"
              id="target-img">
       </div>
-      <div class="large-wrapper">
+      <div class="large-wrapper"
+           v-if="target.visible">
         <div class="image-container large"
+             :style="{ width: target.w +'px', height: target.h + 'px'}"
              id="preview-large">
-          <img src=""
+          <img :src=srcPath
                class="noavatar">
         </div>
         <p>预览</p>
       </div>
+      <canvas id="cropper-canvas"
+              :width="target.w"
+              :height="target.h"></canvas>
     </div>
-    <canvas id="cropper-canvas"
-            :width="preview.w"
-            :height="preview.h"></canvas>
   </div>
 </template>
 
 <script>
-import Cropper from './cropper.js';
+import Cropper from "./cropper.js";
 export default {
   props: {
+    //默认图片的路径
+    srcPath: {
+      type: String,
+      default: ''
+    },
     //裁剪框的宽度
     width: {
       type: Number,
-      default: () => {return 168}
+      default: 336
     },
     //裁剪框的高度
     height: {
       type: Number,
-      default: () => {return 200}
+      default: 400
     },
     //预览框的大小
-    preview: {
+    target: {
       type: Object,
-      default: () => {
+      default: function() {
         return {
-          w: 42,
-          h: 50
-        }
+          w: 168,
+          h: 200,
+          visible: 1
+        };
+      }
+    },
+    // 按钮样式
+    btnStyle: {
+      type: Object,
+      default: function() {
+        return {};
       }
     }
   },
-  mounted: () => {
+  mounted: function() {
+    let _this = this;
     let canvas = document.getElementById("cropper-canvas");
 
     let ctx = canvas.getContext("2d");
-    var img = document.getElementById("target-img");
-
+    let img = document.getElementById("target-img");
+    let priviews = _this.target.visible
+      ? [document.getElementById("preview-large")]
+      : [];
     let cropper = new Cropper({
       element: document.getElementById("cropper-target"),
-      previews: [document.getElementById("preview-large")],
+      previews: priviews,
+      aspectRatio: _this.target.w / _this.target.h,
       onCroppedRectChange: function(rect) {
         ctx.drawImage(
           img,
@@ -73,13 +94,14 @@ export default {
           rect.height,
           0,
           0,
-          165,
-          200
+          _this.target.w,
+          _this.target.h
         );
-        let newImg = canvas.toDataURL();
+        var newImg = canvas.toDataURL();
+        _this.$emit('cutImg', newImg);
       }
     });
-    let input = document.getElementById("file-input");
+    var input = document.getElementById("file-input");
     input.onchange = function() {
       if (typeof FileReader !== "undefined") {
         var reader = new FileReader();
@@ -106,35 +128,29 @@ export default {
   text-align: left;
 }
 
-.p-btn {
-  padding-top: 22px;
+.btn-choose {
+  width: 120px;
+  height: 40px;
   line-height: 40px;
   font-size: 14px;
+  border: 1px solid #1d9ffd;
+  background-color: #1d9ffd;
+  color: #fff;
+  margin: 20px 20px 30px 0;
   position: relative;
-  color: #666;
-  margin-bottom: 30px;
   overflow: hidden;
-}
-
-.btn-upload {
-  width: 120px;
-  padding: 12px 20px;
-  font-size: 14px;
-  border: 1px solid #1e89e0;
-  background-color: transparent;
-  color: #1e89e0;
-  margin-right: 20px;
+  text-align: center;
 }
 
 .file-input {
   position: absolute;
-  font-size: 480px;
-  top: 22px;
-  left: -30px;
+  top: -1px;
+  left: 0;
   height: 42px;
-  width: 150px;
+  width: 120px;
   opacity: 0;
   cursor: pointer;
+  font-size: 0;
 }
 
 .preview-container {
@@ -149,7 +165,6 @@ export default {
 
 .preview-container > div {
   float: left;
-  height: 320px;
 }
 
 .large-wrapper {
@@ -170,82 +185,50 @@ export default {
 }
 
 .image-container.target {
-  width: 330px;
-  height: 400px;
+  width: 100%;
+  height: 100%;
   margin-right: 30px;
 }
 
-.image-container.target img {
-  width: 330px;
-  height: 400px;
-}
-
-.image-container.large {
-  width: 165px;
-  height: 200px;
-}
-
+.image-container.target img,
 .image-container.large img {
-  width: 165px;
-  height: 200px;
+  width: 100%;
+  height: 100%;
 }
 
-.image-container.large .noavatar {
+/* .image-container.large .noavatar {
   background-position: -320px 0;
-}
+} */
 
-.image-container.medium {
-  width: 48px;
-  height: 48px;
+#cropper-canvas {
+  display: none;
 }
+</style>
 
-.image-container.medium img {
-  width: 48px;
-  height: 48px;
-}
-
-.image-container.medium .noavatar {
-  background-position: -324px -210px;
-}
-
-.image-container.small {
-  width: 20px;
-  height: 20px;
-  margin-top: 30px;
-}
-
-.image-container.small img {
-  width: 20px;
-  height: 20px;
-}
-
-.image-container.small .noavatar {
-  background-position: -373px -210px;
-}
-
+<style>
 .resizer {
   position: absolute;
   box-sizing: border-box;
-  border: 1px dashed gray;
+  border: 1px dashed #1d9ffd;
   background-color: transparent;
   cursor: move;
 }
 
 .resizer .resize-handle {
   position: absolute;
-  background-color: #333;
+  background-color: #1d9ffd;
   opacity: 0.5;
   filter: alpha(opacity=50);
   font-size: 1px;
-  height: 7px;
-  width: 7px;
+  height: 6px;
+  width: 6px;
 }
 
 .resizer .resize-handle.ord-n {
   cursor: n-resize;
   left: 50%;
-  margin-left: -4px;
-  margin-top: -1px;
+  margin-left: -3px;
+  margin-top: -3px;
   top: 0;
 }
 
@@ -253,14 +236,14 @@ export default {
   cursor: s-resize;
   bottom: 0;
   left: 50%;
-  margin-bottom: -1px;
-  margin-left: -4px;
+  margin-bottom: -3px;
+  margin-left: -3px;
 }
 
 .resizer .resize-handle.ord-e {
   cursor: e-resize;
-  margin-right: -1px;
-  margin-top: -4px;
+  margin-right: -3px;
+  margin-top: -3px;
   right: 0;
   top: 50%;
 }
@@ -268,23 +251,23 @@ export default {
 .resizer .resize-handle.ord-w {
   cursor: w-resize;
   left: 0;
-  margin-left: -1px;
-  margin-top: -4px;
+  margin-left: -3px;
+  margin-top: -3px;
   top: 50%;
 }
 
 .resizer .resize-handle.ord-nw {
   cursor: nw-resize;
   left: 0;
-  margin-left: -1px;
-  margin-top: -1px;
+  margin-left: -3px;
+  margin-top: -3px;
   top: 0;
 }
 
 .resizer .resize-handle.ord-ne {
   cursor: ne-resize;
-  margin-right: -1px;
-  margin-top: -1px;
+  margin-right: -3px;
+  margin-top: -3px;
   right: 0;
   top: 0;
 }
@@ -292,8 +275,8 @@ export default {
 .resizer .resize-handle.ord-se {
   cursor: se-resize;
   bottom: 0;
-  margin-bottom: -1px;
-  margin-right: -1px;
+  margin-bottom: -3px;
+  margin-right: -3px;
   right: 0;
 }
 
@@ -301,14 +284,14 @@ export default {
   cursor: sw-resize;
   bottom: 0;
   left: 0;
-  margin-bottom: -1px;
-  margin-left: -1px;
+  margin-bottom: -3px;
+  margin-left: -3px;
 }
 
 .resizer .resize-bar.ord-n,
 .resizer .resize-bar.ord-s {
   position: absolute;
-  height: 7px;
+  height: 6px;
   width: 100%;
 }
 
@@ -316,29 +299,29 @@ export default {
 .resizer .resize-bar.ord-w {
   position: absolute;
   height: 100%;
-  width: 7px;
+  width: 6px;
 }
 
 .resizer .resize-bar.ord-n {
   cursor: n-resize;
-  margin-top: -1px;
+  margin-top: -3px;
 }
 
 .resizer .resize-bar.ord-s {
   cursor: s-resize;
   bottom: 0;
-  margin-bottom: -1px;
+  margin-bottom: -3px;
 }
 
 .resizer .resize-bar.ord-e {
   cursor: e-resize;
-  margin-right: -1px;
+  margin-right: -3px;
   right: 0;
 }
 
 .resizer .resize-bar.ord-w {
   cursor: w-resize;
-  margin-left: -1px;
+  margin-left: -3px;
 }
 
 .resizer .inner-rect {

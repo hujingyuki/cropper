@@ -97,14 +97,19 @@ Cropper.prototype.resetResizer = function () {
     aspectRatio = 1;
   }
 
-  //设定宽高,参数无效时默认值为100
+  //设定宽高,参数无效时默认值为图片的一半
   var width;
   if (this.width && typeof this.width == 'number') {
     width = this.width;
   } else {
-    width = 100;
+    width = cropperRect.width / 2;
   }
-  var height = width / aspectRatio;
+  var height;
+  if (this.height && typeof this.height == 'number') {
+    height = this.height;
+  } else {
+    height = width / aspectRatio;
+  }
 
   //设置拖拽框的大小
   var resizerDom = resizer.dom;

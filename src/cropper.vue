@@ -13,7 +13,7 @@
       <div class="image-container target"
            id="cropper-target"
            :style="{ width: width +'px', height: height + 'px'}">
-        <img :src=srcPath
+        <img :src=backgroundUrl
              class="noavatar"
              id="target-img">
       </div>
@@ -22,10 +22,9 @@
         <div class="image-container large"
              :style="{ width: target.w +'px', height: target.h + 'px'}"
              id="preview-large">
-          <img :src=srcPath
+          <img :src=backgroundUrl
                class="noavatar">
         </div>
-        <p>预览</p>
       </div>
       <canvas id="cropper-canvas"
               :width="target.w"
@@ -38,53 +37,69 @@
 import Cropper from "./cropper.js";
 export default {
   props: {
-    //默认图片的路径
-    srcPath: {
-      type: String,
-      default: ''
-    },
-    //裁剪框的宽度
-    width: {
-      type: Number,
-      default: 336
-    },
-    //裁剪框的高度
-    height: {
-      type: Number,
-      default: 400
-    },
-    //预览框的大小
-    target: {
+    //配置项
+    Setting: {
       type: Object,
       default: function() {
         return {
-          w: 168,
-          h: 200,
-          visible: 1
-        };
-      }
-    },
-    // 按钮样式
-    btnStyle: {
-      type: Object,
-      default: function() {
-        return {};
+          //背景图片的路径
+          backgroundUrl: {
+            type: String,
+            default: ''
+          },
+          //图片容器的宽度
+          width: {
+            type: Number,
+            default: 336
+          },
+          //图片容器的高度
+          height: {
+            type: Number,
+            default: 400
+          },
+          //预览框的大小及可见性
+          target: {
+            type: Object,
+            default: function() {
+              return {
+                w: 168, // 宽度
+                h: 200, // 高度
+                visible: 1 //是否显示
+              };
+            }
+          },
+          // 按钮样式
+          btnStyle: {
+            type: Object,
+            default: function() {
+              return {};
+            }
+          }
+        }
       }
     }
   },
   mounted: function() {
     let _this = this;
     let canvas = document.getElementById("cropper-canvas");
-
     let ctx = canvas.getContext("2d");
     let img = document.getElementById("target-img");
+    // 是否需要加载预览框
     let priviews = _this.target.visible
       ? [document.getElementById("preview-large")]
       : [];
     let cropper = new Cropper({
+      //放置图片的操作区域
       element: document.getElementById("cropper-target"),
+      //预览图片的区域
       previews: priviews,
+      //宽高比
       aspectRatio: _this.target.w / _this.target.h,
+      //初始化拖拽框的宽度
+      width: _this.target.w,
+      //初始化拖拽框的高度
+      height: _this.target.h,
+      //拖拽及移动回调事件
       onCroppedRectChange: function(rect) {
         ctx.drawImage(
           img,
@@ -101,6 +116,7 @@ export default {
         _this.$emit('cutImg', newImg);
       }
     });
+    //选择文件后的操作
     var input = document.getElementById("file-input");
     input.onchange = function() {
       if (typeof FileReader !== "undefined") {
@@ -115,7 +131,6 @@ export default {
         // IE10-
         input.select();
         input.blur();
-
         var src = document.selection.createRange().text;
         cropper.setImage(src);
       }

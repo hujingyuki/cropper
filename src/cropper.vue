@@ -13,7 +13,7 @@
       <div class="image-container target"
            id="cropper-target"
            :style="{ width: width +'px', height: height + 'px'}">
-        <img :src=backgroundUrl
+        <img :src= backgroundUrl
              class="noavatar"
              id="target-img">
       </div>
@@ -27,8 +27,8 @@
         </div>
       </div>
       <canvas id="cropper-canvas"
-              :width="target.w"
-              :height="target.h"></canvas>
+              :width="cutPos.w ? cutPos.w : target.w"
+              :height="cutPos.h ? cutPos.h: target.h"></canvas>
     </div>
   </div>
 </template>
@@ -43,40 +43,35 @@ export default {
       default: function() {
         return {
           //背景图片的路径
-          backgroundUrl: {
-            type: String,
-            default: ''
-          },
+          backgroundUrl: '',
           //图片容器的宽度
-          width: {
-            type: Number,
-            default: 336
-          },
+          width: 300,
           //图片容器的高度
-          height: {
-            type: Number,
-            default: 400
-          },
+          height: 400,
           //预览框的大小及可见性
           target: {
-            type: Object,
-            default: function() {
-              return {
-                w: 168, // 宽度
-                h: 200, // 高度
-                visible: 1 //是否显示
-              };
-            }
+            w: 300, // 宽度
+            h: 400, // 高度
+            visible: true //是否显示
+          },
+          //剪裁框位置
+          cutPos: {
+            w: 30, // 宽度
+            h: 40, // 高度
+            x: 10, //相对父级左边距离 大于0有效
+            y: 10 //相对父级顶部距离 大于0有效
           },
           // 按钮样式
-          btnStyle: {
-            type: Object,
-            default: function() {
-              return {};
-            }
-          }
+          btnStyle: {}
         }
       }
+    }
+  },
+  created: function() {
+    //对数据做预处理
+    let _this = this;
+    for (let props in _this.Setting) {
+      _this.copyProps(_this.Setting, _this, props);
     }
   },
   mounted: function() {
@@ -88,17 +83,26 @@ export default {
     let priviews = _this.target.visible
       ? [document.getElementById("preview-large")]
       : [];
+    let aspectRatio = _this.target.w / _this.target.h;
+    //裁剪框配置了宽度则采用配置宽度，否则采用预览框宽度
+    let cutW = _this.cutPos.w ? _this.cutPos.w : _this.target.w;
+    //裁剪框配置了高度则采用配置高度，否则采用预览框高度
+    let cutH = _this.cutPos.h ? _this.cutPos.h : _this.target.h;
     let cropper = new Cropper({
       //放置图片的操作区域
       element: document.getElementById("cropper-target"),
       //预览图片的区域
       previews: priviews,
       //宽高比
-      aspectRatio: _this.target.w / _this.target.h,
-      //初始化拖拽框的宽度
-      width: _this.target.w,
-      //初始化拖拽框的高度
-      height: _this.target.h,
+      aspectRatio: aspectRatio,
+      //初始化裁剪框的宽度
+      width: cutW,
+      //初始化裁剪框的高度
+      height: cutH,
+      //裁剪框横向位置
+      x: _this.cutPos.x,
+      //裁剪框纵向位置
+      y: _this.cutPos.y,
       //拖拽及移动回调事件
       onCroppedRectChange: function(rect) {
         ctx.drawImage(
@@ -109,11 +113,11 @@ export default {
           rect.height,
           0,
           0,
-          _this.target.w,
-          _this.target.h
+          cutW,
+          cutH
         );
         var newImg = canvas.toDataURL();
-        _this.$emit('cutImg', newImg);
+        _this.$emit('cutImgUrl', newImg);
       }
     });
     //选择文件后的操作
@@ -135,6 +139,51 @@ export default {
         cropper.setImage(src);
       }
     };
+  },
+  methods:{
+    /**
+     * @description 属性拷贝
+     * @param from 来源
+     * @param to 去向
+     * @param props 属性
+     */
+    copyProps(from, to, props) {
+      if (typeof from[props] == 'object') {
+        for (let child in from[props]) {
+          this.copyProps(from[props], to[props], child);
+        }
+      } else {
+        
+        if (from[props] && typeof from[props] == typeof to[props]) {
+          to[props] = from[props];
+        }
+      }
+    }
+  },
+  data() {
+    return {
+      //背景图片的路径
+      backgroundUrl: '',
+      //图片容器的宽度
+      width: 336,
+      //图片容器的高度
+      height: 400,
+      //预览框的大小及可见性
+      target: {
+        w: 168, // 宽度
+        h: 200, // 高度
+        visible: false //是否显示
+      },
+      //剪裁框位置
+      cutPos: {
+        w: 0, // 宽度
+        h: 0, // 高度
+        x: 0, //相对父级左边距离 大于0有效
+        y: 0 //相对父级顶部距离 大于0有效
+      },
+      // 按钮样式
+      btnStyle: {}
+    }
   }
 };
 </script>

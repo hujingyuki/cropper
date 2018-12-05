@@ -99,13 +99,13 @@ Cropper.prototype.resetResizer = function () {
 
   //设定宽高,参数无效时默认值为图片的一半
   var width;
-  if (this.width && typeof this.width == 'number') {
+  if (this.width > 0 && typeof this.width == 'number') {
     width = this.width;
   } else {
     width = cropperRect.width / 2;
   }
   var height;
-  if (this.height && typeof this.height == 'number') {
+  if (this.height > 0 && typeof this.height == 'number') {
     height = this.height;
   } else {
     height = width / aspectRatio;
@@ -116,12 +116,33 @@ Cropper.prototype.resetResizer = function () {
   resizerDom.style.width = width + 'px';
   resizerDom.style.height = height + 'px';
 
-  //有父级元素时将拖拽框水平垂直居中
-  if (cropperRect) {
+  //如果配置了拖拽框的位置就按配置的来否则就居中
+  //x
+  if (this.x > 0 && typeof this.x == 'number') {
+    //如果x设置超出了图片的区域则放置在图片边上
+    if(this.x > (cropperRect.width - width)){
+      resizerDom.style.left = cropperRect.width - width + 'px';
+    } else {
+      resizerDom.style.left = this.x + 'px';
+    }
+  } else if (cropperRect) {
     resizerDom.style.left = (cropperRect.width - width) / 2 + 'px';
+  } else {
+    resizerDom.style.left = '';
+  }
+
+  //y
+  if (this.y > 0 && typeof this.y == 'number') {
+    //如果y设置超出了图片的区域则放置在图片底部
+    if(this.y > (cropperRect.height - height)){
+      resizerDom.style.top = cropperRect.height - height + 'px';
+    } else {
+      resizerDom.style.top = this.y + 'px';
+    }
+  } else if (cropperRect) {
     resizerDom.style.top = (cropperRect.height - height) / 2 + 'px';
   } else {
-    resizerDom.style.left = resizerDom.style.top = '';
+    resizerDom.style.top = '';
   }
 
   resizer.doOnStateChange();

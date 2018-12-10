@@ -1,55 +1,76 @@
-> 组件开发及调试
+# 可拖拽预览的图片剪裁插件
 
-组件开发不希望在工程中过多依赖开发服务，所以目前我们采用 vue 官方 cli 进行开发调试，如果已经安装了最新脚手架，我们可以直接运行:
+> 组件功能特点：
+>
+> * 可在本地选择图片上传前进行裁剪
+>
+> * 可配置背景图片路径
+>
+> * 可通过拖拽虚线框实现图片的剪裁操作，虚线框能实时显示拖拽过程
+>
+> * 拖拽结束后会像父组件传递一个cutImg的事件并带回base64格式的剪裁后的图片路径
+>
+> * 按钮样式可自定义
+>
+> * 图片操作框（下图左侧）、图片预览框（下图右侧）大小可配置
+>
+> * 预览框可配置可见性（默认可见）
+>
+> * 图片拖拽框（图中虚线框）可定义起始位置及大小（默认为位置图片中心，大小为预览框大小）
+>
+>   <!--PS：拖拽框起始比例如果和预览框不一致，拖拽后仍以预览框比例为主（需注意如果预览框不可见时，重新定义拖拽框的大小需要将预览框大小一同调节）-->
 
-<pre>
-> cd test-component
-> npm install
-> vue serve src/test-component.vue --open`
-</pre>
 
-如果本地没有安装最新 vue cli，可以全局安装后再试。
 
-<pre>
-> npm install @vue/cli -g
-</pre>
+### 组件效果
 
-服务启动成功，浏览器打开后显示当前我们开发的组件。
+![](./image/demo.gif)
 
-> 组件单元测试
+### 组件使用方式
 
-目前组件单元测试引入 vue 官方提供 test-utils 工具进行测试，并基于 jest 运行测试脚本。
-组件开发完成，我们需要在 test 目录下编写单元测试脚本，关于 vue 组件单元测试，建议大家自主学习官方提供文档，运行测试脚本：
+```vue
+<template>
+	<cropper :Setting=setting @cutImg=getCutUrl></cropper>
+<!--组件接收一个传入参数Setting（不传时均采取默认值），传出一个事件cutImg携带裁剪后的图片路径（base64位）-->
+</template>
+<script>
+  import cropper from 'cropper/src/index';
+  export default {
+    components: {cropper};
+    methods:{
+      getCutUrl(data) {
+        console.log('getCutUrl', data);
+      }
+    }
+    data(){
+      return {
+        setting:{
+          //背景图片的路径
+          backgroundUrl: "",
+          //图片操作区域宽度
+          width: 336,
+          //图片操作区域高度
+          height: 400,
+          //预览框的大小及可见性
+          target: {
+            w: 168, // 宽度
+            h: 200, // 高度
+            visible: true //是否显示
+          },
+          //拖拽框位置
+          cutPos: {
+            w: 0, // 宽度
+            h: 0, // 高度
+            x: 0, //相对父级左边距离 大于0有效
+            y: 0 //相对父级顶部距离 大于0有效
+          }, // 拖拽框的范围为照片的边界，如果xy过大超出边界后，以边界值为准
+          // 按钮样式
+          btnStyle: {}
+         }
+      }
+    }
+  }
+</script>
 
-<pre>
-> npm run test
-</pre>
+```
 
-输出相关测试执行结果。
-
-> 组件打包构建
-
-目前我们完成了组件开发及单元测试，现在我们需要将组件进行构建，你可能会很好奇，为什么我们不能直接分享`.vue`文件呢？当然可以，但是这样你可能会让那些想直接通过 js 引用的人无法使用，所以我们需要打包构建，这里为了配置简单及打包文件大小等原因，我们选择了`rollup`，目前配置了三种格式，分别是`es`、`iife`、`umd`，运行打包脚本:
-
-<pre>
-> npm run build
-</pre>
-
-查看 dist 目录，输出三种格式文件，默认 npm 包指向 umd 文件引用。
-
-- test-component.esm.js
-- test-component.min.js
-- test-component.umd.js
-
-> 组件提交及发布
-
-组件暂时直接发布到 npm，整个提交及审核后续会有详细机制，暂不提交到 git，同时因公司现有 npm 组件仓库存在相关问题，经过沟通后决定先使用现有自己搭建 npm 仓库，添加及切换到 npm 私服。
-
-<pre>
-> npm install nrm -g
-> nrm add fly http://172.31.10.36:8090
-> nrm use fly
-> npm publish
-</pre>
-
-打开现有组件私服`http://npm.flyui.cn/`，可以查看到已经发布的组件，若要在项目中使用，直接通过 npm install 方式安装即可。

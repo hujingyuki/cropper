@@ -100,13 +100,13 @@ Cropper.prototype.resetResizer = function () {
   //设定宽高,参数无效时默认值为图片的一半
   var width;
   if (this.width > 0 && typeof this.width == 'number') {
-    width = this.width;
+    width = this.width > cropperRect.width ? cropperRect.width : this.width;
   } else {
     width = cropperRect.width / 2;
   }
   var height;
   if (this.height > 0 && typeof this.height == 'number') {
-    height = this.height;
+    height = this.height > cropperRect.height ? cropperRect.height : this.height;
   } else {
     height = width / aspectRatio;
   }

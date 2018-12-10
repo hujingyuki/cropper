@@ -4,29 +4,29 @@
          :style="btnStyle">
       <input type="file"
              name="avatar"
-             id="file-input"
+             ref="fileInput"
              class="file-input"
              accept="image/*">
       选择文件
     </div>
     <div class="preview-container">
       <div class="image-container target"
-           id="cropper-target"
+           ref="cropperTarget"
            :style="{ width: width +'px', height: height + 'px'}">
-        <img :src= backgroundUrl
+        <img :src=backgroundUrl
              class="noavatar"
-             id="target-img">
+             ref="targetImg">
       </div>
       <div class="large-wrapper"
            v-if="target.visible">
         <div class="image-container large"
              :style="{ width: target.w +'px', height: target.h + 'px'}"
-             id="preview-large">
+             ref="previewLarge">
           <img :src=backgroundUrl
                class="noavatar">
         </div>
       </div>
-      <canvas id="cropper-canvas"
+      <canvas ref="cropperCanvas" class="cropper-canvas"
               :width="cutPos.w ? cutPos.w : target.w"
               :height="cutPos.h ? cutPos.h: target.h"></canvas>
     </div>
@@ -41,47 +41,22 @@ export default {
     Setting: {
       type: Object,
       default: function() {
-        return {
-          //背景图片的路径
-          backgroundUrl: '',
-          //图片容器的宽度
-          width: 300,
-          //图片容器的高度
-          height: 400,
-          //预览框的大小及可见性
-          target: {
-            w: 300, // 宽度
-            h: 400, // 高度
-            visible: true //是否显示
-          },
-          //剪裁框位置
-          cutPos: {
-            w: 30, // 宽度
-            h: 40, // 高度
-            x: 10, //相对父级左边距离 大于0有效
-            y: 10 //相对父级顶部距离 大于0有效
-          },
-          // 按钮样式
-          btnStyle: {}
-        }
+        return {}
       }
     }
   },
   created: function() {
     //对数据做预处理
-    let _this = this;
-    for (let props in _this.Setting) {
-      _this.copyProps(_this.Setting, _this, props);
-    }
+    this.updateDom();
   },
   mounted: function() {
     let _this = this;
-    let canvas = document.getElementById("cropper-canvas");
-    let ctx = canvas.getContext("2d");
-    let img = document.getElementById("target-img");
+    let canvas = _this.$refs.cropperCanvas;
+    let ctx = canvas ? canvas.getContext("2d") : '';
+    let img = _this.$refs.targetImg;
     // 是否需要加载预览框
     let priviews = _this.target.visible
-      ? [document.getElementById("preview-large")]
+      ? [_this.$refs.previewLarge]
       : [];
     let aspectRatio = _this.target.w / _this.target.h;
     //裁剪框配置了宽度则采用配置宽度，否则采用预览框宽度
@@ -90,7 +65,7 @@ export default {
     let cutH = _this.cutPos.h ? _this.cutPos.h : _this.target.h;
     let cropper = new Cropper({
       //放置图片的操作区域
-      element: document.getElementById("cropper-target"),
+      element: _this.$refs.cropperTarget,
       //预览图片的区域
       previews: priviews,
       //宽高比
@@ -115,13 +90,12 @@ export default {
           0,
           cutW,
           cutH
-        );
-        var newImg = canvas.toDataURL();
-        _this.$emit('cutImgUrl', newImg);
+        ); 
+        _this.$emit("cutImg", canvas.toDataURL());
       }
     });
     //选择文件后的操作
-    var input = document.getElementById("file-input");
+    let input = _this.$refs.fileInput;
     input.onchange = function() {
       if (typeof FileReader !== "undefined") {
         var reader = new FileReader();
@@ -140,7 +114,7 @@ export default {
       }
     };
   },
-  methods:{
+  methods: {
     /**
      * @description 属性拷贝
      * @param from 来源
@@ -148,22 +122,34 @@ export default {
      * @param props 属性
      */
     copyProps(from, to, props) {
-      if (typeof from[props] == 'object') {
+      if (typeof from[props] == "object") {
+        if( props == "btnStyle") {
+          to[props] = from[props];
+          return;
+        }
         for (let child in from[props]) {
           this.copyProps(from[props], to[props], child);
         }
       } else {
-        
-        if (from[props] && typeof from[props] == typeof to[props]) {
+        if ((from[props] || props == "visible") && typeof from[props] == typeof to[props]) {
           to[props] = from[props];
         }
+      }
+    },
+    /**
+     * @description 监听组件传值操作，更新dom
+     */
+    updateDom() {
+      let _this = this;
+      for (let props in _this.Setting) {
+        _this.copyProps(_this.Setting, _this, props);
       }
     }
   },
   data() {
     return {
       //背景图片的路径
-      backgroundUrl: '',
+      backgroundUrl: "",
       //图片容器的宽度
       width: 336,
       //图片容器的高度
@@ -172,7 +158,7 @@ export default {
       target: {
         w: 168, // 宽度
         h: 200, // 高度
-        visible: false //是否显示
+        visible: true //是否显示
       },
       //剪裁框位置
       cutPos: {
@@ -183,9 +169,10 @@ export default {
       },
       // 按钮样式
       btnStyle: {}
-    }
+    };
   }
-};
+}
+
 </script>
 <style scoped>
 .imageCropper {
@@ -264,7 +251,7 @@ export default {
   background-position: -320px 0;
 } */
 
-#cropper-canvas {
+.cropper-canvas {
   display: none;
 }
 </style>

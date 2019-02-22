@@ -1,6 +1,6 @@
 {
   "name": "cropper",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "图片剪裁及预览插件",
   "main": "dist/cropper.umd.js",
   "module": "dist/cropper.esm.js",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@vue/test-utils": "^1.0.0-beta.24",
     "babel-jest": "^23.4.2",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "jest": "^23.5.0",
     "minimist": "^1.2.0",

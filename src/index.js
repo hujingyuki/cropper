@@ -1,3 +1,4 @@
+import 'babel-polyfill';
 import component from './cropper.vue';
 
 export function install(Vue) {

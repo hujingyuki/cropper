@@ -34,6 +34,7 @@
 </template>
 
 <script>
+import 'babel-polyfill';
 import Cropper from "./cropper.js";
 export default {
   props: {
@@ -48,22 +49,33 @@ export default {
   created: function() {
     //对数据做预处理
     this.updateDom();
+    //兼容ie浏览器的indexof方法
+    if (!Array.indexOf) {  
+      Array.prototype.indexOf = function (obj) {  
+        for (var i = 0; i < this.length; i++) {  
+          if (this[i] == obj) {  
+            return i;  
+          }  
+        }  
+        return -1;  
+      }  
+    } 
   },
   mounted: function() {
-    let _this = this;
-    let canvas = _this.$refs.cropperCanvas;
-    let ctx = canvas ? canvas.getContext("2d") : '';
-    let img = _this.$refs.targetImg;
+    var _this = this;
+    var canvas = _this.$refs.cropperCanvas;
+    var ctx = canvas ? canvas.getContext("2d") : '';
+    var img = _this.$refs.targetImg;
     // 是否需要加载预览框
-    let priviews = _this.target.visible
+    var priviews = _this.target.visible
       ? [_this.$refs.previewLarge]
       : [];
-    let aspectRatio = _this.target.w / _this.target.h;
+    var aspectRatio = _this.target.w / _this.target.h;
     //裁剪框配置了宽度则采用配置宽度，否则采用预览框宽度
-    let cutW = _this.cutPos.w ? _this.cutPos.w : _this.target.w;
+    var cutW = _this.cutPos.w ? _this.cutPos.w : _this.target.w;
     //裁剪框配置了高度则采用配置高度，否则采用预览框高度
-    let cutH = _this.cutPos.h ? _this.cutPos.h : _this.target.h;
-    let cropper = new Cropper({
+    var cutH = _this.cutPos.h ? _this.cutPos.h : _this.target.h;
+    var cropper = new Cropper({
       //放置图片的操作区域
       element: _this.$refs.cropperTarget,
       //预览图片的区域
@@ -91,12 +103,34 @@ export default {
           cutW,
           cutH
         ); 
-        _this.$emit("cutImg", canvas.toDataURL());
+        _this.output(rect, canvas.toDataURL());
       }
     });
     //选择文件后的操作
-    let input = _this.$refs.fileInput;
+    var input = _this.$refs.fileInput;
     input.onchange = function() {
+      var fileSize = 0;
+      if (input.value) {
+        //限制图片格式
+        var fileType = input.value.substring(input.value.lastIndexOf(".")).toLowerCase();
+        if(_this.format && _this.format.length > 0){
+          if (_this.format.indexOf(fileType) < 0) {
+            alert('请选择指定图片格式的文件');
+            //将图片置空
+            _this.output();
+            return;
+          }
+        }
+        //限制图片大小
+        if(_this.limitSize){
+          fileSize = (input.files && input.files[0]) ? input.files[0].size/(1024*1024): 0;
+          if(_this.tolimitSize(fileSize)) {
+            //将图片置空
+            _this.output();
+            return;
+          }
+        }
+      }
       if (typeof FileReader !== "undefined") {
         var reader = new FileReader();
         reader.onload = function(event) {
@@ -110,11 +144,43 @@ export default {
         input.select();
         input.blur();
         var src = document.selection.createRange().text;
+        //兼容ie9的图片大小判断
+        if(_this.limitSize){
+          try{
+            /* eslint-disable no-undef */
+            var fso = new ActiveXObject("Scripting.FileSystemObject");   
+            fileSize = fso.GetFile(src).size/(1024*1024);
+          } catch(e) {
+            alert(e+"\n"+"如果错误为：Error:Automation 服务器不能创建对象；"+"\n"+"请按以下方法配置浏览器："+"\n"+"请打开【Internet选项-安全-Internet-自定义级别-ActiveX控件和插件-对未标记为可安全执行脚本的ActiveX控件初始化并执行脚本（不安全）-点击启用-确定】");
+            //将图片置空
+            _this.output();
+            return window.location.reload();
+          }
+          if (_this.tolimitSize(fileSize)) {
+            //将图片置空
+            _this.output();
+            return;
+          }
+        }
         cropper.setImage(src);
       }
     };
   },
   methods: {
+    /**
+     * @description 限制图片大小
+     * @param fileSize 图片大小
+     * @returns 是否超限
+     */
+    tolimitSize(fileSize){
+      if(fileSize && fileSize > this.limitSize){
+        /* eslint-disable no-console */
+        console.log(fileSize,this.limitSize);
+        alert(`请选择图片大小不超过${this.limitSize}M的文件`);
+        return true;
+      }
+      return false;
+    },
     /**
      * @description 属性拷贝
      * @param from 来源
@@ -127,7 +193,7 @@ export default {
           to[props] = from[props];
           return;
         }
-        for (let child in from[props]) {
+        for (var child in from[props]) {
           this.copyProps(from[props], to[props], child);
         }
       } else {
@@ -140,10 +206,18 @@ export default {
      * @description 监听组件传值操作，更新dom
      */
     updateDom() {
-      let _this = this;
-      for (let props in _this.Setting) {
+      var _this = this;
+      for (var props in _this.Setting) {
         _this.copyProps(_this.Setting, _this, props);
       }
+    },
+    /**
+     * @description 抛出事件
+     * @param pos 位置信息
+     * @param url base64图片信息
+     */
+    output(pos, url){
+      this.$emit("cutImg", {pos:pos, url: url});
     }
   },
   data() {
@@ -168,7 +242,9 @@ export default {
         y: 0 //相对父级顶部距离 大于0有效
       },
       // 按钮样式
-      btnStyle: {}
+      btnStyle: {},
+      limitSize: 0, //限制图片大小
+      format:[] //限制图片格式
     };
   }
 }
